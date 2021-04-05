@@ -13,14 +13,14 @@ export const verifyAuth=(req, res, next)=>
     }
     try{
         const user= dataFromToken(token).payload;
-const users= UserController.Users;
-const data = users.find(u=>u.email===user.email);
+const users= UserController.UserData;
+const data = users.findOne({email:user.email});
 if(!data){
 return res.status(404).json({
     message:"you are not a user"
 })
 }
-req.body.userId=data.id;
+req.body.userId=user.id;
 return next();
     }
     catch(e){

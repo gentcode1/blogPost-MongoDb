@@ -1,10 +1,10 @@
 import bcrypt from 'bcrypt'
 import  {generateAuthToken}  from '../Helpers/token';
 import UserData from '../model/Usermodel';
-const Users = [];
+
 class UserController {
-    static SignUp = (req, res) => {
-        const id = Users.length + 1;
+    static SignUp = async(req, res) => {
+       
         let {
             firstname,
             lastname,
@@ -16,24 +16,24 @@ class UserController {
             adress
         } = req.body;
         password=bcrypt.hashSync(password,10)
-        const isEmailExist = Users.find(User => User.email === email);
+        const isEmailExist = await UserData.findOne({email:email});
         if (isEmailExist) {
             return res.status(409).json({
                 status: 409,
                 error: "email is deplicated"
             });
         }
-        const User = new UserData(id, firstname, lastname, email, password, gender, role, department, adress);
-        Users.push(User);//adding information in array
-        const data = Users.find((U) => U.email == email);
+        req.body.password=password;
+        const data = await UserData.create(req.body);
+        
         if (!data) {
             return res.status(417).json({
                 status: 417,
-                message: "Account was not created"
+                message: "account creation failed"
             })
         }
         else{
-            let  { password, ...dataWithOutPassword}=data
+            let  { password, ...dataWithOutPassword}=data._doc
         return res.status(201).json({
             status: 201,
             message: "Account created successfully",
@@ -41,16 +41,18 @@ class UserController {
         })
         }
     }
-    static SignIn = (req, res) => {
+
+    static SignIn = async (req, res) => {
         let {
             email,
             password } = req.body;
-        const User = new UserData(email, password);
-        Users.push(User);//adding information in array
-        const data = Users.find((User) => User.email === email);
-        const isUserExist = Users.find((User) => User.email === email);
+       // const User = await UserData(email, password);
+        //Users.push(User);//adding information in array
+        //const data = Users.find((User) => User.email === email);
+        const isUserExist = await UserData.findOne({email: email});
         const is_passwordExist=bcrypt.compareSync(password,isUserExist.password)
         if (isUserExist && is_passwordExist) {
+            const data= isUserExist;
             const token = generateAuthToken({
                 id:data.id,
                 email:data.email,
@@ -69,7 +71,7 @@ class UserController {
         })
     }
 }
-export default {UserController,Users};
+export default {UserController,UserData};
 
 
 

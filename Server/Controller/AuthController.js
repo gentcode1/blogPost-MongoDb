@@ -1,8 +1,37 @@
 import bcrypt from 'bcrypt'
 import  {generateAuthToken}  from '../Helpers/token';
-import UserData from '../model/Usermodel';
+import UserData from '../Model/UserModel'
+import EmailHelper from '../Helpers/emailTemplate'
+import Response from '../Helpers/Response'
 
 class UserController {
+
+static changPassword= async(req,res)=>{
+    let{
+         oldPassword,
+         newPassword,
+         confirmPassword
+    }=req.body
+    const userId=req.body.userId;
+    const userDetails= await  UserData.findById(userId);
+
+    console.log(userDetails);
+    if (bcrypt.compareSync(oldPassword, userDetails.password)){
+        if (newPassword===confirmPassword){
+            const password= bcrypt.hashSync(newPassword,10);
+            
+            const passwordChangedTime=Date.now();
+            const userUpdated= await UserData.findByIdAndUpdate(userId,{
+                password:password,
+                passwordChangedTime:passwordChangedTime
+            });
+            return Response.successMsg(res,'your password has changed successfully',userUpdated,200);
+        }
+        return Response.errorMsg(res,'new password and confirm password is not match',417) ;
+    }
+    return Response.errorMsg(res, 'old password provided in invalid',417);
+}
+
     static SignUp = async(req, res) => {
        
         let {
@@ -18,27 +47,20 @@ class UserController {
         password=bcrypt.hashSync(password,10)
         const isEmailExist = await UserData.findOne({email:email});
         if (isEmailExist) {
-            return res.status(409).json({
-                status: 409,
-                error: "email is deplicated"
-            });
-        }
+           return Response.errorMsg(res,'email is duplicated', 409)
+            }
         req.body.password=password;
         const data = await UserData.create(req.body);
         
         if (!data) {
-            return res.status(417).json({
-                status: 417,
-                message: "account creation failed"
-            })
-        }
+          return  Response.errorMsg(res, 'account creation failed', 417)
+           }
         else{
             let  { password, ...dataWithOutPassword}=data._doc
-        return res.status(201).json({
-            status: 201,
-            message: "Account created successfully",
-            data:dataWithOutPassword
-        })
+         await  EmailHelper.userWelcomeEmail(dataWithOutPassword);
+
+        return Response.successMsg(res, 'account created successfully', dataWithOutPassword,201 )
+       
         }
     }
 
@@ -57,21 +79,24 @@ class UserController {
                 id:data.id,
                 email:data.email,
                 role:data.role,
-            })
-            return res.status(200).json({
-                status: 200,
-                message: "logged in successful",
-                token: token,
-                data
-            })
-              }
-        return res.status(401).json({
-            status: 401,
-            message: "log in failed"
-        })
-    }
-}
-export default {UserController,UserData};
+                passwordChangedTime: data.passwordChangedTime
+            });
+            return Response.successMsg(res, 'log in successfully', {token}, 200)
+        }
+    
+            return  Response.errorMsg(res, 'log in failed', 401)
+
+        }
+            
+           
+            
+              
+
+            
+        }
+
+
+export default {UserController};
 
 
 

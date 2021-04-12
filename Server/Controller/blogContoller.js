@@ -1,6 +1,7 @@
 
 
 import blogData from '../Model/blogModel';
+import Response from '../Helpers/Response';
 
 //const Blogs = [];
 
@@ -25,77 +26,46 @@ import blogData from '../Model/blogModel';
            const data = blogData.create(req.body);
 
           if(!data){  
-               
-            return res.status(417).json({
-                    status:417,
-                    message: "Input failed",
-                 
-               })
-            }
-            return res.status(201).json({
-                status:201,
-                message: "blog is created successfully",
-                data
-            })
-          
-               
-               
+            return Response.errorMsg(res, 'Input failed', 417);   
            
-            
+            }
+
+            return Response.successMsg(res,'blog created successfuly', data,201)
+           
            
         }
     static getAllBlog= async(req, res)=>{
 
          const data= await blogData.find()
-
-      return res.status(200).json({
-        status:200,
-        message:'posts available here',
-        data
-    })
+     return Response.successMsg(res, 'post available here', data,200);
+  
 }
 
     static  getOneBlog= async (req, res)=>{
     const blogId=req.params.id;
     const data = await blogData.findById(blogId);
     if(!data){
-               
-        return res.status(417).json({
-                status:417,
-                message: "Input failed",
-             
-           })
+        return Response.errorMsg(res, 'cant find blog', 417);     
+        
         }
-  
-        return res.status(200).json({
-            status:200,
-            message: "blog by Id is  successfully created",
-            data
-        })
-    
-    }  
-    
+        return Response.successMsg(res, 'get a blog', data,200);
+     
+    }
     static deleteOneBlog= async (req, res)=>
     
     {
         const blogId= (req.params.id);
         
-        const data= await blogData.findByIdAndDelete(blogId)
-
+        const data= await blogData.findByIdAndDelete(blogId);
+        const deletedData= await blogData.findById(blogId);
         if(!data){ 
-               
-            return res.status(417).json({
-                    status:417,
-                    message: "delete failed",
-                 
-               })
+        
+
+            return Response.errorMsg(res, 'delete blog failed', 417);   
+            
             }
-            const deletedData= await blogData.findById(blogId);
-            return res.status(200).json({
-                status:200, 
-                message:"blog is deleted  successfully ",
-                data:deletedData,
-            })
+            return Response.successMsg(res,'blog deleted successfully',deletedData,200);
+           
     }
     static updateBlog= async (req, res)=>{
         const blogId= req.params.id;
@@ -111,23 +81,12 @@ import blogData from '../Model/blogModel';
           content:content
       });
         if(!data){
-              
-            return res.status(417).json({
-                status:417,
-                message: "update failed",
+            return Response.errorMsg(res, 'update failed', 417);  
             
-                 
-               })
             }
             const dataUpdated= await blogData.findById(blogId);
-            return res.status(200).json({
-                status:200,
-                message: "blog updated   successfully ",
-                data:dataUpdated
+            return Response.successMsg(res, 'blog updated successfully', dataUpdated, 200);
             
-           
-            })
-
     }
   
     }

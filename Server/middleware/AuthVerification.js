@@ -1,24 +1,25 @@
 import {dataFromToken} from '../Helpers/Token';
-import UserController from '../Controller/AuthController'
+import userInfo from '../Model/UserModel'
+import Response from '../Helpers/Response'
 
-export const verifyAuth=(req, res, next)=>
+export const verifyAuth= async (req, res, next)=>
 {
     const token= req.header('x-auth-token');
 
     if(!token){
-      return  res.status(404).json
-        ({
-            message: "no token provided",
-        })
+        return Response.errorMsg(res,'no token provided', 404);
+     
     }
     try{
-        const user= dataFromToken(token).payload;
-const users= UserController.UserData;
-const data = users.findOne({email:user.email});
+        const user= await dataFromToken(token).payload;
+
+const data = await userInfo.findById(user.id);
 if(!data){
-return res.status(404).json({
-    message:"you are not a user"
-})
+    return Response.errorMsg(res, 'you are not a user', 404)
+
+}
+if(user.passwordChangedTime!=data.passwordChangedTime){
+    return Response.errorMsg(res,' please re-login, password is not match ',404);
 }
 req.body.userId=user.id;
 return next();
